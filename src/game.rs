@@ -59,7 +59,6 @@ impl GameState {
         self.update_explorers();
         self.assign_resources_to_collectors();
         self.update_collectors();
-        self.cleanup_collected_resources();
     }
 
     fn update_explorers(&mut self) {
@@ -199,11 +198,6 @@ impl GameState {
 
     fn cleanup_resource_at(&mut self, x: usize, y: usize) {
         self.discovered_resources.retain(|res| !(res.x == x && res.y == y));
-    }
-
-    fn cleanup_collected_resources(&mut self) {
-        // Cette méthode est appelée à la fin d'update() mais le nettoyage
-        // est déjà fait dans update_collectors() pour éviter les conflits d'emprunt
     }
 
     fn is_resource_tile(tile: Tile) -> bool {
