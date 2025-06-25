@@ -30,9 +30,9 @@ pub fn generate_map(width: usize, height: usize, seed: u32) -> Vec<Vec<Tile>> {
                 v if v > 0.45 => Tile::Obstacle,
                 v if v > 0.2 => {
                     match rng.gen_range(0..100) {
-                        0..=4 => Tile::Energy,
-                        5..=9 => Tile::Mineral,
-                        10..=12 => Tile::Science,
+                        0..=5 => Tile::Energy,
+                        6..=11 => Tile::Mineral,
+                        12..=14 => Tile::Science,
                         _ => Tile::Empty,
                     }
                 }

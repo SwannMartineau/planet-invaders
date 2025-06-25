@@ -2,7 +2,6 @@ use std::collections::{HashMap, HashSet};
 use rand::Rng;
 use crate::map::{generate_map, tile::Tile};
 use crate::robot::{Robot, RobotType, RobotState};
-use crate::base::{find_all_base_positions, spawn_robots_in_base};
 
 #[derive(Debug, Clone)]
 pub struct DiscoveredResource {
@@ -26,14 +25,14 @@ impl GameState {
         
         // Configuration des robots
         let robot_counts = vec![
-            (RobotType::Explorer, 20),
-            (RobotType::Miner, 10),
-            (RobotType::EnergyCollector, 10),
-            (RobotType::Scientist, 5),
+            (RobotType::Explorer, 5),
+            (RobotType::Miner, 1),
+            (RobotType::EnergyCollector, 1),
+            (RobotType::Scientist, 1),
         ];
 
-        let base_positions = find_all_base_positions(&map);
-        let robots = spawn_robots_in_base(&base_positions, &robot_counts);
+        let base_positions = Self::find_all_base_positions(&map);
+        let robots = Self::spawn_robots_in_base(&base_positions, &robot_counts);
 
         let mut resources = HashMap::new();
         resources.insert(Tile::Mineral, 0);
@@ -151,7 +150,7 @@ impl GameState {
     }
 
     fn assign_resources_to_collectors(&mut self) {
-        let available_robots = self.get_available_robots_by_type();
+        let mut available_robots = self.get_available_robots_by_type();
         
         // Créer une liste des assignments à effectuer pour éviter les conflits d'emprunt
         let mut assignments = Vec::new();
@@ -165,8 +164,8 @@ impl GameState {
                     _ => continue,
                 };
                 
-                if let Some(robot_list) = available_robots.get(&robot_type) {
-                    if let Some(&robot_id) = robot_list.first() {
+                if let Some(robot_list) = available_robots.get_mut(&robot_type) {
+                    if let Some(robot_id) = robot_list.pop() {
                         assignments.push((index, robot_id, resource.x, resource.y));
                     }
                 }
@@ -182,6 +181,9 @@ impl GameState {
                 robot.set_target(target_x, target_y);
             }
         }
+        let waiting_resources = self.discovered_resources.iter()
+            .filter(|res| res.assigned_robot_id.is_none())
+            .count();
     }
 
     fn get_available_robots_by_type(&self) -> HashMap<RobotType, Vec<usize>> {
@@ -218,5 +220,44 @@ impl GameState {
         matches!(tile, Tile::Mineral | Tile::Energy | Tile::Science)
     }
 
+    fn find_all_base_positions(map: &[Vec<Tile>]) -> Vec<(usize, usize)> {
+        let mut base_positions = Vec::new();
+        for (y, row) in map.iter().enumerate() {
+            for (x, tile) in row.iter().enumerate() {
+                if *tile == Tile::Base {
+                    base_positions.push((x, y));
+                }
+            }
+        }
+        if base_positions.is_empty() {
+            panic!("Aucune base trouvée sur la carte !");
+        }
+        base_positions
+    }
 
+    fn spawn_robots_in_base(
+        base_positions: &[(usize, usize)],
+        robot_counts: &[(RobotType, usize)],
+    ) -> Vec<Robot> {
+        let mut robots = Vec::new();
+        let mut position_index = 0;
+
+
+        for (robot_type, count) in robot_counts {
+            for _i in 0..*count {
+                if position_index < base_positions.len() {
+                    let (x, y) = base_positions[position_index];
+                    robots.push(Robot::new(x, y, *robot_type));
+                    position_index += 1;
+                } else {
+                    position_index = 0;
+                    let (x, y) = base_positions[position_index];
+                    robots.push(Robot::new(x, y, *robot_type));
+                    position_index += 1;
+                }
+            }
+        }
+
+        robots
+    }
 }
