@@ -25,19 +25,15 @@ impl GameState {
         
         // Configuration des robots
         let robot_counts = vec![
-            (RobotType::Explorer, 20),
-            (RobotType::Miner, 10),
-            (RobotType::EnergyCollector, 10),
-            (RobotType::Scientist, 5),
+            (RobotType::Explorer, 50),
+            (RobotType::Miner, 3),
+            (RobotType::EnergyCollector, 2),
+            (RobotType::Scientist, 2),
         ];
 
         let base_positions = find_all_base_positions(&map);
         let robots = spawn_robots_in_base(&base_positions, &robot_counts);
-
-        let mut resources = HashMap::new();
-        resources.insert(Tile::Mineral, 0);
-        resources.insert(Tile::Energy, 0);
-        resources.insert(Tile::Science, 0);
+        let base = Base::new(width, height);
 
         Self { 
             map, 
