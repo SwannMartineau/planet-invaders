@@ -25,10 +25,10 @@ impl GameState {
         
         // Configuration des robots
         let robot_counts = vec![
-            (RobotType::Explorer, 5),
-            (RobotType::Miner, 2),
-            (RobotType::EnergyCollector, 2),
-            (RobotType::Scientist, 1),
+            (RobotType::Explorer, 20),
+            (RobotType::Miner, 10),
+            (RobotType::EnergyCollector, 10),
+            (RobotType::Scientist, 5),
         ];
 
         let base_positions = Self::find_all_base_positions(&map);
