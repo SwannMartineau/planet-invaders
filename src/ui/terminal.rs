@@ -6,8 +6,9 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use ratatui::{
-    backend::{Backend, CrosstermBackend},
-    layout::{Constraint, Direction, Layout},
+    backend::Backend,
+    backend::CrosstermBackend,
+    layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Paragraph},
@@ -15,6 +16,7 @@ use ratatui::{
 };
 
 use crate::map::tile::Tile;
+use crate::robot::Robot;
 
 pub struct AppUI {
     terminal: Terminal<CrosstermBackend<io::Stdout>>,
@@ -27,55 +29,59 @@ impl AppUI {
         execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
         let backend = CrosstermBackend::new(stdout);
         let terminal = Terminal::new(backend)?;
-
         Ok(Self { terminal })
     }
 
-    pub fn run(&mut self, map: &[Vec<Tile>]) -> io::Result<()> {
-        loop {
-            let render_closure = |f: &mut Frame| {
-                let chunks = Layout::default()
-                    .direction(Direction::Vertical)
-                    .margin(1)
-                    .constraints([Constraint::Percentage(100)])
-                    .split(f.size());
-                
-                Self::render_map(f, chunks[0], map);
-            };
-
-            self.terminal.draw(render_closure)?;
-
-            if event::poll(Duration::from_millis(100))? {
-                if let Event::Key(key) = event::read()? {
-                    if key.kind == KeyEventKind::Press {
-                        match key.code {
-                            KeyCode::Char('q') | KeyCode::Esc => return Ok(()),
-                            _ => {}
-                        }
-                    }
-                }
-            }
-        }
+    pub fn render(&mut self, map: &[Vec<Tile>], robots: &[Robot]) -> io::Result<()> {
+        self.terminal.draw(|f| {
+            let chunks = Layout::default()
+                .direction(Direction::Vertical)
+                .margin(1)
+                .constraints([Constraint::Percentage(100)])
+                .split(f.area());
+            
+            // Appel de la fonction statique
+            Self::render_map(f, chunks[0], map, robots);
+        })?;
+        Ok(())
     }
 
-    fn render_map(f: &mut Frame, area: ratatui::layout::Rect, map: &[Vec<Tile>]) {
-        let map_lines: Vec<Line> = map
+    // Fonction statique - pas besoin de &self
+    fn render_map(f: &mut Frame, area: Rect, map: &[Vec<Tile>], robots: &[Robot]) {
+        let mut display_map = map.to_vec();
+        
+        for robot in robots {
+            if robot.y < display_map.len() && robot.x < display_map[robot.y].len() {
+                display_map[robot.y][robot.x] = Tile::Robot;
+            }
+        }
+
+        let map_lines: Vec<Line> = display_map
             .iter()
-            .map(|row| {
+            .enumerate()
+            .map(|(y, row)| {
                 let spans: Vec<Span> = row
                     .iter()
-                    .map(|tile| {
-                        let ch = tile.to_char();
-                        let color = match tile {
-                            Tile::Empty => Color::DarkGray,
-                            Tile::Obstacle => Color::Gray,
-                            Tile::Energy => Color::Yellow,
-                            Tile::Mineral => Color::Cyan,
-                            Tile::Science => Color::Magenta,
-                            Tile::Base => Color::Green,
-                            Tile::Robot => Color::Blue,
-                        };
-                        Span::styled(format!("{} ", ch), Style::default().fg(color))
+                    .enumerate()
+                    .map(|(x, tile)| {
+                        if let Some(robot) = robots.iter().find(|r| r.x == x && r.y == y) {
+                            Span::styled(
+                                format!("{} ", robot.robot_type.to_char()),
+                                Style::default().fg(robot.robot_type.color())
+                            )
+                        } else {
+                            let ch = tile.to_char();
+                            let color = match tile {
+                                Tile::Empty => Color::DarkGray,
+                                Tile::Obstacle => Color::Gray,
+                                Tile::Energy => Color::Yellow,
+                                Tile::Mineral => Color::Cyan,
+                                Tile::Science => Color::Magenta,
+                                Tile::Base => Color::Green,
+                                Tile::Robot => Color::Blue,
+                            };
+                            Span::styled(format!("{} ", ch), Style::default().fg(color))
+                        }
                     })
                     .collect();
                 Line::from(spans)
@@ -84,7 +90,7 @@ impl AppUI {
 
         let map_widget = Paragraph::new(map_lines)
             .block(Block::default().borders(Borders::ALL).title("Carte - Appuyez sur 'q' pour quitter"));
-
+        
         f.render_widget(map_widget, area);
     }
 }
