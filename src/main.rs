@@ -20,7 +20,7 @@ fn main() -> Result<(), io::Error> {
 
     loop {
         game_state.update();
-        app_ui.render(game_state.get_map(), game_state.get_robots())?;
+        app_ui.render(game_state.get_map(), game_state.get_robots(), game_state.get_base_resources())?;
 
         if event::poll(Duration::from_millis(100))? {
             if let Event::Key(key) = event::read()? {

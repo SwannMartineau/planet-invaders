@@ -14,6 +14,7 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph, List, ListItem},
     Frame, Terminal,
 };
+use std::collections::HashMap;
 use crate::map::tile::Tile;
 use crate::robot::{Robot, RobotType};
 
@@ -31,7 +32,7 @@ impl AppUI {
         Ok(Self { terminal })
     }
 
-    pub fn render(&mut self, map: &[Vec<Tile>], robots: &[Robot]) -> io::Result<()> {
+    pub fn render(&mut self, map: &[Vec<Tile>], robots: &[Robot], base_resources: &HashMap<Tile, u32>) -> io::Result<()> {
         self.terminal.draw(|f| {
             // Diviser l'écran en deux parties : carte principale et légende
             let chunks = Layout::default()
@@ -46,8 +47,8 @@ impl AppUI {
             // Rendu de la carte
             Self::render_map(f, chunks[0], map, robots);
             
-            // Rendu de la légende
-            Self::render_legend(f, chunks[1]);
+            // Rendu de la légende et des ressources
+            Self::render_sidebar(f, chunks[1], base_resources);
         })?;
         Ok(())
     }
@@ -94,15 +95,22 @@ impl AppUI {
         f.render_widget(map_widget, area);
     }
 
-    fn render_legend(f: &mut Frame, area: Rect) {
-        // Diviser la zone de légende en deux sections : Tiles et Robots
-        let legend_chunks = Layout::default()
+    fn render_sidebar(f: &mut Frame, area: Rect, base_resources: &HashMap<Tile, u32>) {
+        // Diviser la zone en trois sections : Base, Tiles et Robots
+        let sidebar_chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
-                Constraint::Percentage(60), // 60% pour les tiles
-                Constraint::Percentage(40), // 40% pour les robots
+                Constraint::Length(6),      // Base resources
+                Constraint::Percentage(50), // Tiles
+                Constraint::Percentage(50), // Robots
             ])
             .split(area);
+
+        // Section Base
+        Self::render_base_resources(f, sidebar_chunks[0], base_resources);
+        
+        // Diviser le reste pour tiles et robots
+        let legend_chunks = [sidebar_chunks[1], sidebar_chunks[2]];
 
         // Légende des tiles
         let tile_legend_items = vec![
@@ -137,6 +145,27 @@ impl AppUI {
                 .border_style(Style::default().fg(Color::White)));
 
         f.render_widget(robot_legend, legend_chunks[1]);
+    }
+    
+    fn render_base_resources(f: &mut Frame, area: Rect, resources: &HashMap<Tile, u32>) {
+        let resource_items = vec![
+            format!("Énergie: {}", resources.get(&Tile::Energy).unwrap_or(&0)),
+            format!("Minéral: {}", resources.get(&Tile::Mineral).unwrap_or(&0)),
+            format!("Science: {}", resources.get(&Tile::Science).unwrap_or(&0)),
+        ];
+        
+        let resource_lines: Vec<Line> = resource_items
+            .into_iter()
+            .map(|item| Line::from(Span::styled(item, Style::default().fg(Color::White))))
+            .collect();
+        
+        let base_widget = Paragraph::new(resource_lines)
+            .block(Block::default()
+                .borders(Borders::ALL)
+                .title("Base - Ressources")
+                .border_style(Style::default().fg(Color::Green)));
+        
+        f.render_widget(base_widget, area);
     }
 
     fn create_legend_item(symbol: char, color: Color, description: &str) -> ListItem {

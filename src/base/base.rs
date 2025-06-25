@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::map::tile::Tile;
 use crate::robot::{Robot, RobotType};
 
@@ -6,6 +7,7 @@ pub struct Base {
     pub x: usize,
     pub y: usize,
     pub size: usize,
+    pub inventory: HashMap<Tile, u32>,
 }
 
 impl Base {
@@ -14,7 +16,20 @@ impl Base {
         let x = (map_width - size) / 2;
         let y = (map_height - size) / 2;
         
-        Self { x, y, size }
+        let mut inventory = HashMap::new();
+        inventory.insert(Tile::Mineral, 0);
+        inventory.insert(Tile::Energy, 0);
+        inventory.insert(Tile::Science, 0);
+        
+        Self { x, y, size, inventory }
+    }
+    
+    pub fn add_resource(&mut self, resource: Tile) {
+        *self.inventory.get_mut(&resource).unwrap() += 1;
+    }
+    
+    pub fn get_resources(&self) -> &HashMap<Tile, u32> {
+        &self.inventory
     }
 }
 

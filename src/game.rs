@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 use rand::Rng;
 use crate::map::{generate_map, tile::Tile};
 use crate::robot::{Robot, RobotType, RobotState};
-use crate::base::{find_all_base_positions, spawn_robots_in_base};
+use crate::base::{Base, find_all_base_positions, spawn_robots_in_base};
 
 #[derive(Debug, Clone)]
 pub struct DiscoveredResource {
@@ -15,9 +15,8 @@ pub struct DiscoveredResource {
 pub struct GameState {
     map: Vec<Vec<Tile>>,
     robots: Vec<Robot>,
-    resources: HashMap<Tile, u32>,
+    base: Base,
     discovered_resources: Vec<DiscoveredResource>,
-    base_position: (usize, usize),
 }
 
 impl GameState {
@@ -26,26 +25,21 @@ impl GameState {
         
         // Configuration des robots
         let robot_counts = vec![
-            (RobotType::Explorer, 20),
-            (RobotType::Miner, 10),
-            (RobotType::EnergyCollector, 10),
-            (RobotType::Scientist, 5),
+            (RobotType::Explorer, 5),
+            (RobotType::Miner, 3),
+            (RobotType::EnergyCollector, 2),
+            (RobotType::Scientist, 2),
         ];
 
         let base_positions = find_all_base_positions(&map);
         let robots = spawn_robots_in_base(&base_positions, &robot_counts);
-
-        let mut resources = HashMap::new();
-        resources.insert(Tile::Mineral, 0);
-        resources.insert(Tile::Energy, 0);
-        resources.insert(Tile::Science, 0);
+        let base = Base::new(width, height);
 
         Self { 
             map, 
             robots, 
-            resources, 
+            base,
             discovered_resources: Vec::new(),
-            base_position: base_positions[0],
         }
     }
 
@@ -55,6 +49,10 @@ impl GameState {
 
     pub fn get_robots(&self) -> &[Robot] {
         &self.robots
+    }
+    
+    pub fn get_base_resources(&self) -> &HashMap<Tile, u32> {
+        self.base.get_resources()
     }
 
     pub fn update(&mut self) {
@@ -104,7 +102,7 @@ impl GameState {
             .collect();
         
         let mut resources_to_remove = Vec::new();
-        let base_pos = self.base_position;
+        let base_pos = (self.base.x, self.base.y);
         
         for (robot_id, robot) in self.robots.iter_mut().enumerate().filter(|(_, r)| r.robot_type != RobotType::Explorer) {
             match robot.state {
@@ -123,7 +121,7 @@ impl GameState {
                                 robot.collect(tile);
                                 self.map[target_y][target_x] = Tile::Empty;
                                 resources_to_remove.push((target_x, target_y));
-                                robot.set_returning_to_base(base_pos.0, base_pos.1);
+                                robot.set_returning_to_base(self.base.x, self.base.y);
                             } else {
                             }
                         } else {
@@ -132,13 +130,13 @@ impl GameState {
                     }
                 },
                 RobotState::ReturningToBase => {
-                    if robot.x == base_pos.0 && robot.y == base_pos.1 {
+                    if robot.x == self.base.x && robot.y == self.base.y {
                         let unloaded_items = robot.unload_inventory();
                         for item in unloaded_items {
-                            *self.resources.get_mut(&item).unwrap() += 1;
+                            self.base.add_resource(item);
                         }
                     } else {
-                        robot.move_toward(base_pos.0, base_pos.1, &self.map);
+                        robot.move_toward(self.base.x, self.base.y, &self.map);
                     }
                 }
             }
