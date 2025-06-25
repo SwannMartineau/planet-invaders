@@ -9,14 +9,13 @@ use ratatui::{
     backend::Backend,
     backend::CrosstermBackend,
     layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Style},
+    style::{Color, Style, Modifier},
     text::{Line, Span},
-    widgets::{Block, Borders, Paragraph},
+    widgets::{Block, Borders, Paragraph, List, ListItem},
     Frame, Terminal,
 };
-
 use crate::map::tile::Tile;
-use crate::robot::Robot;
+use crate::robot::{Robot, RobotType};
 
 pub struct AppUI {
     terminal: Terminal<CrosstermBackend<io::Stdout>>,
@@ -34,19 +33,25 @@ impl AppUI {
 
     pub fn render(&mut self, map: &[Vec<Tile>], robots: &[Robot]) -> io::Result<()> {
         self.terminal.draw(|f| {
+            // Diviser l'écran en deux parties : carte principale et légende
             let chunks = Layout::default()
-                .direction(Direction::Vertical)
+                .direction(Direction::Horizontal)
                 .margin(1)
-                .constraints([Constraint::Percentage(100)])
+                .constraints([
+                    Constraint::Percentage(75), // 75% pour la carte
+                    Constraint::Percentage(25), // 25% pour la légende
+                ])
                 .split(f.area());
             
-            // Appel de la fonction statique
+            // Rendu de la carte
             Self::render_map(f, chunks[0], map, robots);
+            
+            // Rendu de la légende
+            Self::render_legend(f, chunks[1]);
         })?;
         Ok(())
     }
 
-    // Fonction statique - pas besoin de &self
     fn render_map(f: &mut Frame, area: Rect, map: &[Vec<Tile>], robots: &[Robot]) {
         let mut display_map = map.to_vec();
         
@@ -67,19 +72,11 @@ impl AppUI {
                         if let Some(robot) = robots.iter().find(|r| r.x == x && r.y == y) {
                             Span::styled(
                                 format!("{} ", robot.robot_type.to_char()),
-                                Style::default().fg(robot.robot_type.color())
+                                Style::default().fg(robot.robot_type.color()).add_modifier(Modifier::BOLD)
                             )
                         } else {
                             let ch = tile.to_char();
-                            let color = match tile {
-                                Tile::Empty => Color::DarkGray,
-                                Tile::Obstacle => Color::Gray,
-                                Tile::Energy => Color::Yellow,
-                                Tile::Mineral => Color::Cyan,
-                                Tile::Science => Color::Magenta,
-                                Tile::Base => Color::Green,
-                                Tile::Robot => Color::Blue,
-                            };
+                            let color = Self::get_tile_color(tile);
                             Span::styled(format!("{} ", ch), Style::default().fg(color))
                         }
                     })
@@ -89,9 +86,83 @@ impl AppUI {
             .collect();
 
         let map_widget = Paragraph::new(map_lines)
-            .block(Block::default().borders(Borders::ALL).title("Carte - Appuyez sur 'q' pour quitter"));
+            .block(Block::default()
+                .borders(Borders::ALL)
+                .title("Planet Invaders - Carte")
+                .border_style(Style::default().fg(Color::Green)));
         
         f.render_widget(map_widget, area);
+    }
+
+    fn render_legend(f: &mut Frame, area: Rect) {
+        // Diviser la zone de légende en deux sections : Tiles et Robots
+        let legend_chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Percentage(60), // 60% pour les tiles
+                Constraint::Percentage(40), // 40% pour les robots
+            ])
+            .split(area);
+
+        // Légende des tiles
+        let tile_legend_items = vec![
+            Self::create_legend_item('.', Color::DarkGray, "Terrain vide"),
+            Self::create_legend_item('#', Color::Gray, "Obstacle"),
+            Self::create_legend_item('E', Color::Yellow, "Énergie"),
+            Self::create_legend_item('M', Color::Cyan, "Minéral"),
+            Self::create_legend_item('S', Color::Magenta, "Science"),
+            Self::create_legend_item('B', Color::Green, "Base"),
+        ];
+
+        let tile_legend = List::new(tile_legend_items)
+            .block(Block::default()
+                .borders(Borders::ALL)
+                .title("Terrain")
+                .border_style(Style::default().fg(Color::White)));
+
+        f.render_widget(tile_legend, legend_chunks[0]);
+
+        // Légende des robots
+        let robot_legend_items = vec![
+            Self::create_legend_item('R', Color::Cyan, "Mineur"),
+            Self::create_legend_item('R', Color::Yellow, "Collecteur"),
+            Self::create_legend_item('R', Color::Magenta, "Scientifique"),
+            Self::create_legend_item('R', Color::Green, "Explorateur"),
+        ];
+
+        let robot_legend = List::new(robot_legend_items)
+            .block(Block::default()
+                .borders(Borders::ALL)
+                .title("Robots")
+                .border_style(Style::default().fg(Color::White)));
+
+        f.render_widget(robot_legend, legend_chunks[1]);
+    }
+
+    fn create_legend_item(symbol: char, color: Color, description: &str) -> ListItem {
+        let content = Line::from(vec![
+            Span::styled(
+                format!("{} ", symbol),
+                Style::default().fg(color).add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                description,
+                Style::default().fg(Color::White),
+            ),
+        ]);
+        ListItem::new(content)
+    }
+
+    fn get_tile_color(tile: &Tile) -> Color {
+        match tile {
+            Tile::Empty => Color::DarkGray,
+            Tile::Obstacle => Color::Gray,
+            Tile::Energy => Color::Yellow,
+            Tile::Mineral => Color::Cyan,
+            Tile::Science => Color::Magenta,
+            Tile::Base => Color::Green,
+            Tile::Robot => Color::Blue,
+        }
     }
 }
 
