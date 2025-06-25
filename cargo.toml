@@ -1,0 +1,8 @@
+[package]
+name = "astro_swarm"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+noise = "0.8"
+rand = "0.8"
