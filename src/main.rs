@@ -24,10 +24,10 @@ impl GameState {
         
         // Configuration des robots
         let robot_counts = vec![
-            (RobotType::Miner, 0),      // 3 robots mineurs
-            (RobotType::EnergyCollector, 0), // 3 robots collecteurs d'énergie
-            (RobotType::Scientist, 0),  // 2 robots scientifiques
-            (RobotType::Explorer, 20),   // 2 robots explorateurs
+            (RobotType::Miner, 2),      // 3 robots mineurs
+            (RobotType::EnergyCollector, 1), // 3 robots collecteurs d'énergie
+            (RobotType::Scientist, 1),  // 2 robots scientifiques
+            (RobotType::Explorer, 1),   // 2 robots explorateurs
         ];
 
         let base_pos = find_base_position(&map).expect("Base not found");
@@ -117,8 +117,8 @@ fn spawn_robots_near_base(
 
 fn main() -> Result<(), io::Error> {
     // Configuration de la carte
-    let width = 40;
-    let height = 20;
+    let width = 50;
+    let height = 50;
     let seed = 1337;
 
     // Initialisation du jeu

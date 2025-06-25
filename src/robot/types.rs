@@ -9,10 +9,10 @@ pub enum RobotType {
 impl RobotType {
     pub fn to_char(&self) -> char {
         match self {
-            RobotType::Miner => '1',
-            RobotType::EnergyCollector => '2',
-            RobotType::Scientist => '3',
-            RobotType::Explorer => '4',
+            RobotType::Miner => 'R', //'⛏️',
+            RobotType::EnergyCollector => 'R', //'⚡',
+            RobotType::Scientist => 'R', //'🔬',
+            RobotType::Explorer => 'R', //'🔍',
         }
     }
 
@@ -21,7 +21,7 @@ impl RobotType {
             RobotType::Miner => ratatui::style::Color::Cyan,
             RobotType::EnergyCollector => ratatui::style::Color::Yellow,
             RobotType::Scientist => ratatui::style::Color::Magenta,
-            RobotType::Explorer => ratatui::style::Color::Blue,
+            RobotType::Explorer => ratatui::style::Color::Green,
         }
     }
 }
