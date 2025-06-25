@@ -3,9 +3,9 @@ use super::types::RobotType;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum RobotState {
-    Idle,
-    GoingToResource,
-    ReturningToBase,
+    Idle,           // En attente d'une mission
+    GoingToResource, // Se dirigeant vers une ressource
+    ReturningToBase, // Retournant à la base avec des ressources
 }
 
 #[derive(Debug, Clone)]
@@ -15,8 +15,8 @@ pub struct Robot {
     pub robot_type: RobotType,
     pub inventory: Vec<Tile>,
     pub explored_tiles: Vec<(usize, usize, Tile)>,
-    pub current_target: Option<(usize, usize)>,
     pub state: RobotState,
+    current_target: Option<(usize, usize)>,
 }
 
 impl Robot {
@@ -27,8 +27,8 @@ impl Robot {
             robot_type,
             inventory: Vec::new(),
             explored_tiles: Vec::new(),
-            current_target: None,
             state: RobotState::Idle,
+            current_target: None,
         }
     }
 
@@ -44,12 +44,11 @@ impl Robot {
     }
 
     pub fn can_collect(&self, tile: Tile) -> bool {
-        match (self.robot_type, tile) {
-            (RobotType::Miner, Tile::Mineral) => true,
-            (RobotType::EnergyCollector, Tile::Energy) => true,
-            (RobotType::Scientist, Tile::Science) => true,
-            _ => false,
-        }
+        matches!((self.robot_type, tile), 
+            (RobotType::Miner, Tile::Mineral) |
+            (RobotType::EnergyCollector, Tile::Energy) |
+            (RobotType::Scientist, Tile::Science)
+        )
     }
 
     pub fn record_exploration(&mut self, x: usize, y: usize, tile: Tile) {
@@ -65,30 +64,13 @@ impl Robot {
         }
     }
 
-    pub fn clear_target(&mut self) {
-        self.current_target = None;
-        self.state = RobotState::Idle;
-    }
-
     pub fn set_returning_to_base(&mut self, base_x: usize, base_y: usize) {
         self.current_target = Some((base_x, base_y));
         self.state = RobotState::ReturningToBase;
     }
 
-    pub fn is_returning_to_base(&self) -> bool {
-        self.state == RobotState::ReturningToBase
-    }
-
     pub fn is_idle(&self) -> bool {
         self.state == RobotState::Idle
-    }
-
-    pub fn is_going_to_resource(&self) -> bool {
-        self.state == RobotState::GoingToResource
-    }
-
-    pub fn has_inventory(&self) -> bool {
-        !self.inventory.is_empty()
     }
 
     pub fn unload_inventory(&mut self) -> Vec<Tile> {
@@ -99,26 +81,11 @@ impl Robot {
         items
     }
 
-    pub fn has_target(&self) -> bool {
-        self.current_target.is_some()
-    }
-
-    pub fn get_target(&self) -> Option<(usize, usize)> {
-        self.current_target
-    }
-
-    pub fn is_at_target(&self) -> bool {
-        if let Some((target_x, target_y)) = self.current_target {
-            self.x == target_x && self.y == target_y
-        } else {
-            false
-        }
-    }
-
     pub fn move_toward(&mut self, target_x: usize, target_y: usize, map: &[Vec<Tile>]) -> bool {
         let dx = target_x as isize - self.x as isize;
         let dy = target_y as isize - self.y as isize;
 
+        // Déplacement prioritaire sur l'axe avec la plus grande distance
         if dx.abs() > dy.abs() {
             let new_x = (self.x as isize + dx.signum()) as usize;
             if self.can_move_to(new_x, self.y, map) {
@@ -151,29 +118,15 @@ impl Robot {
         if y >= map.len() || x >= map[y].len() {
             return false;
         }
-        match map[y][x] {
-            Tile::Empty | Tile::Energy | Tile::Mineral | Tile::Science | Tile::Base => true,
-            Tile::Obstacle | Tile::Robot => false,
-        }
-    }
-
-    pub fn distance_to(&self, target_x: usize, target_y: usize) -> f64 {
-        let dx = target_x as f64 - self.x as f64;
-        let dy = target_y as f64 - self.y as f64;
-        (dx * dx + dy * dy).sqrt()
-    }
-
-    pub fn get_compatible_resource_types(&self) -> Vec<Tile> {
-        match self.robot_type {
-            RobotType::Miner => vec![Tile::Mineral],
-            RobotType::EnergyCollector => vec![Tile::Energy],
-            RobotType::Scientist => vec![Tile::Science],
-            RobotType::Explorer => vec![],
-        }
+        matches!(map[y][x], 
+            Tile::Empty | Tile::Energy | Tile::Mineral | Tile::Science | Tile::Base
+        )
     }
 
     pub fn is_collector(&self) -> bool {
-        matches!(self.robot_type, RobotType::Miner | RobotType::EnergyCollector | RobotType::Scientist)
+        matches!(self.robot_type, 
+            RobotType::Miner | RobotType::EnergyCollector | RobotType::Scientist
+        )
     }
 
     pub fn is_explorer(&self) -> bool {
