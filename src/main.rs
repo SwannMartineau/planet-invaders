@@ -2,6 +2,7 @@ mod map;
 mod ui;
 mod robot;
 mod game;
+mod base;
 
 use std::io;
 use std::time::Duration;

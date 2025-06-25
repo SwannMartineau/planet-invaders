@@ -2,6 +2,7 @@ use std::collections::{HashMap, HashSet};
 use rand::Rng;
 use crate::map::{generate_map, tile::Tile};
 use crate::robot::{Robot, RobotType, RobotState};
+use crate::base::{find_all_base_positions, spawn_robots_in_base};
 
 #[derive(Debug, Clone)]
 pub struct DiscoveredResource {
@@ -31,8 +32,8 @@ impl GameState {
             (RobotType::Scientist, 5),
         ];
 
-        let base_positions = Self::find_all_base_positions(&map);
-        let robots = Self::spawn_robots_in_base(&base_positions, &robot_counts);
+        let base_positions = find_all_base_positions(&map);
+        let robots = spawn_robots_in_base(&base_positions, &robot_counts);
 
         let mut resources = HashMap::new();
         resources.insert(Tile::Mineral, 0);
@@ -217,44 +218,5 @@ impl GameState {
         matches!(tile, Tile::Mineral | Tile::Energy | Tile::Science)
     }
 
-    fn find_all_base_positions(map: &[Vec<Tile>]) -> Vec<(usize, usize)> {
-        let mut base_positions = Vec::new();
-        for (y, row) in map.iter().enumerate() {
-            for (x, tile) in row.iter().enumerate() {
-                if *tile == Tile::Base {
-                    base_positions.push((x, y));
-                }
-            }
-        }
-        if base_positions.is_empty() {
-            panic!("Aucune base trouvée sur la carte !");
-        }
-        base_positions
-    }
 
-    fn spawn_robots_in_base(
-        base_positions: &[(usize, usize)],
-        robot_counts: &[(RobotType, usize)],
-    ) -> Vec<Robot> {
-        let mut robots = Vec::new();
-        let mut position_index = 0;
-
-        for (robot_type, count) in robot_counts {
-            for _i in 0..*count {
-                if position_index < base_positions.len() {
-                    let (x, y) = base_positions[position_index];
-                    robots.push(Robot::new(x, y, *robot_type));
-                    
-                    position_index += 1;
-                } else {
-                    position_index = 0;
-                    let (x, y) = base_positions[position_index];
-                    robots.push(Robot::new(x, y, *robot_type));
-                    position_index += 1;
-                }
-            }
-        }
-
-        robots
-    }
 }
