@@ -82,7 +82,7 @@ impl GameState {
                 robot.move_to(new_x, new_y);
                 
                 let current_tile = self.map[new_y][new_x];
-                if current_tile.is_consumable() && !discovered_positions.contains(&(new_x, new_y)) {
+                if Self::is_resource_tile(current_tile) && !discovered_positions.contains(&(new_x, new_y)) {
                     robot.record_exploration(new_x, new_y, current_tile);
                     new_discoveries.push(DiscoveredResource {
                         x: new_x,
@@ -117,11 +117,13 @@ impl GameState {
                         
                         if robot.x == target_x && robot.y == target_y {
                             let tile = self.map[target_y][target_x];
+                            
                             if robot.can_collect(tile) {
                                 robot.collect(tile);
                                 self.map[target_y][target_x] = Tile::Empty;
                                 resources_to_remove.push((target_x, target_y));
                                 robot.set_returning_to_base(base_pos.0, base_pos.1);
+                            } else {
                             }
                         } else {
                             robot.move_toward(target_x, target_y, &self.map);
@@ -210,6 +212,11 @@ impl GameState {
         // est déjà fait dans update_collectors() pour éviter les conflits d'emprunt
     }
 
+    // Méthode helper pour identifier les ressources de façon fiable
+    fn is_resource_tile(tile: Tile) -> bool {
+        matches!(tile, Tile::Mineral | Tile::Energy | Tile::Science)
+    }
+
     fn find_all_base_positions(map: &[Vec<Tile>]) -> Vec<(usize, usize)> {
         let mut base_positions = Vec::new();
         for (y, row) in map.iter().enumerate() {
@@ -232,28 +239,21 @@ impl GameState {
         let mut robots = Vec::new();
         let mut position_index = 0;
 
-        println!("Positions de base disponibles: {}", base_positions.len());
-
         for (robot_type, count) in robot_counts {
             for _i in 0..*count {
                 if position_index < base_positions.len() {
                     let (x, y) = base_positions[position_index];
                     robots.push(Robot::new(x, y, *robot_type));
-                    println!("Robot créé: {:?} à la position de base ({}, {})", robot_type, x, y);
+                    
                     position_index += 1;
                 } else {
                     position_index = 0;
                     let (x, y) = base_positions[position_index];
                     robots.push(Robot::new(x, y, *robot_type));
-                    println!("Robot créé: {:?} à la position de base ({}, {}) - Position réutilisée", robot_type, x, y);
                     position_index += 1;
                 }
             }
         }
-
-        println!("Total des robots créés: {} dans {} positions de base", 
-                 robots.len(), 
-                 base_positions.len());
 
         robots
     }
