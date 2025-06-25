@@ -1,12 +1,10 @@
 use std::io;
-use std::time::Duration;
 use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind},
+    event::{DisableMouseCapture, EnableMouseCapture},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use ratatui::{
-    backend::Backend,
     backend::CrosstermBackend,
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Style, Modifier},
@@ -16,7 +14,7 @@ use ratatui::{
 };
 use std::collections::HashMap;
 use crate::map::tile::Tile;
-use crate::robot::{Robot, RobotType};
+use crate::robot::{Robot};
 
 pub struct AppUI {
     terminal: Terminal<CrosstermBackend<io::Stdout>>,
@@ -34,20 +32,15 @@ impl AppUI {
 
     pub fn render(&mut self, map: &[Vec<Tile>], robots: &[Robot], base_resources: &HashMap<Tile, u32>) -> io::Result<()> {
         self.terminal.draw(|f| {
-            // Diviser l'écran en deux parties : carte principale et légende
             let chunks = Layout::default()
                 .direction(Direction::Horizontal)
                 .margin(1)
                 .constraints([
-                    Constraint::Percentage(75), // 75% pour la carte
-                    Constraint::Percentage(25), // 25% pour la légende
+                    Constraint::Percentage(75),
+                    Constraint::Percentage(25),
                 ])
                 .split(f.area());
-            
-            // Rendu de la carte
             Self::render_map(f, chunks[0], map, robots);
-            
-            // Rendu de la légende et des ressources
             Self::render_sidebar(f, chunks[1], base_resources);
         })?;
         Ok(())
@@ -96,23 +89,17 @@ impl AppUI {
     }
 
     fn render_sidebar(f: &mut Frame, area: Rect, base_resources: &HashMap<Tile, u32>) {
-        // Diviser la zone en trois sections : Base, Tiles et Robots
         let sidebar_chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
-                Constraint::Length(6),      // Base resources
-                Constraint::Percentage(50), // Tiles
-                Constraint::Percentage(50), // Robots
+                Constraint::Length(6),
+                Constraint::Percentage(50),
+                Constraint::Percentage(50),
             ])
             .split(area);
 
-        // Section Base
         Self::render_base_resources(f, sidebar_chunks[0], base_resources);
-        
-        // Diviser le reste pour tiles et robots
         let legend_chunks = [sidebar_chunks[1], sidebar_chunks[2]];
-
-        // Légende des tiles
         let tile_legend_items = vec![
             Self::create_legend_item('.', Color::DarkGray, "Terrain vide"),
             Self::create_legend_item('#', Color::Gray, "Obstacle"),
@@ -130,7 +117,6 @@ impl AppUI {
 
         f.render_widget(tile_legend, legend_chunks[0]);
 
-        // Légende des robots
         let robot_legend_items = vec![
             Self::create_legend_item('R', Color::Cyan, "Mineur"),
             Self::create_legend_item('R', Color::Yellow, "Collecteur"),

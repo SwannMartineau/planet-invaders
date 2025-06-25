@@ -226,12 +226,4 @@ impl Robot {
             Tile::Empty | Tile::Energy | Tile::Mineral | Tile::Science | Tile::Base
         )
     }
-
-    pub fn is_collector(&self) -> bool {
-        matches!(self.robot_type, RobotType::Miner | RobotType::EnergyCollector | RobotType::Scientist)
-    }
-
-    pub fn is_explorer(&self) -> bool {
-        self.robot_type == RobotType::Explorer
-    }
 }

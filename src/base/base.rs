@@ -6,7 +6,6 @@ use crate::robot::{Robot, RobotType};
 pub struct Base {
     pub x: usize,
     pub y: usize,
-    pub size: usize,
     pub inventory: HashMap<Tile, u32>,
 }
 
@@ -21,7 +20,7 @@ impl Base {
         inventory.insert(Tile::Energy, 0);
         inventory.insert(Tile::Science, 0);
         
-        Self { x, y, size, inventory }
+        Self { x, y, inventory }
     }
     
     pub fn add_resource(&mut self, resource: Tile) {
@@ -58,7 +57,7 @@ pub fn spawn_robots_in_base(
     println!("Positions de base disponibles: {}", base_positions.len());
 
     for (robot_type, count) in robot_counts {
-        for i in 0..*count {
+        for _i in 0..*count {
             if position_index < base_positions.len() {
                 let (x, y) = base_positions[position_index];
                 robots.push(Robot::new(x, y, *robot_type));

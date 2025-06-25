@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap};
 use rand::Rng;
 use crate::map::{generate_map, tile::Tile};
 use crate::robot::{Robot, RobotType, RobotState};
@@ -25,7 +25,7 @@ impl GameState {
         
         // Configuration des robots
         let robot_counts = vec![
-            (RobotType::Explorer, 50),
+            (RobotType::Explorer, 4),
             (RobotType::Miner, 3),
             (RobotType::EnergyCollector, 2),
             (RobotType::Scientist, 2),
@@ -66,7 +66,6 @@ impl GameState {
         let mut rng = rand::thread_rng();
         let mut new_discoveries = Vec::new();
         
-        // Collecter d'abord les positions déjà découvertes pour éviter les conflits d'emprunt
         let discovered_positions: std::collections::HashSet<(usize, usize)> = 
             self.discovered_resources.iter().map(|res| (res.x, res.y)).collect();
         
@@ -102,7 +101,6 @@ impl GameState {
             .collect();
         
         let mut resources_to_remove = Vec::new();
-        let base_pos = (self.base.x, self.base.y);
         
         for (robot_id, robot) in self.robots.iter_mut().enumerate().filter(|(_, r)| r.robot_type != RobotType::Explorer) {
             match robot.state {
@@ -142,7 +140,6 @@ impl GameState {
             }
         }
         
-        // Stocker les ressources à supprimer pour nettoyage
         for (x, y) in resources_to_remove {
             self.cleanup_resource_at(x, y);
         }
@@ -151,7 +148,6 @@ impl GameState {
     fn assign_resources_to_collectors(&mut self) {
         let mut available_robots = self.get_available_robots_by_type();
         
-        // Créer une liste des assignments à effectuer pour éviter les conflits d'emprunt
         let mut assignments = Vec::new();
         
         for (index, resource) in self.discovered_resources.iter().enumerate() {
@@ -171,7 +167,6 @@ impl GameState {
             }
         }
         
-        // Appliquer les assignments
         for (resource_index, robot_id, target_x, target_y) in assignments {
             if let Some(resource) = self.discovered_resources.get_mut(resource_index) {
                 resource.assigned_robot_id = Some(robot_id);
@@ -180,9 +175,6 @@ impl GameState {
                 robot.set_target(target_x, target_y);
             }
         }
-        let waiting_resources = self.discovered_resources.iter()
-            .filter(|res| res.assigned_robot_id.is_none())
-            .count();
     }
 
     fn get_available_robots_by_type(&self) -> HashMap<RobotType, Vec<usize>> {
@@ -214,49 +206,8 @@ impl GameState {
         // est déjà fait dans update_collectors() pour éviter les conflits d'emprunt
     }
 
-    // Méthode helper pour identifier les ressources de façon fiable
     fn is_resource_tile(tile: Tile) -> bool {
         matches!(tile, Tile::Mineral | Tile::Energy | Tile::Science)
     }
 
-    fn find_all_base_positions(map: &[Vec<Tile>]) -> Vec<(usize, usize)> {
-        let mut base_positions = Vec::new();
-        for (y, row) in map.iter().enumerate() {
-            for (x, tile) in row.iter().enumerate() {
-                if *tile == Tile::Base {
-                    base_positions.push((x, y));
-                }
-            }
-        }
-        if base_positions.is_empty() {
-            panic!("Aucune base trouvée sur la carte !");
-        }
-        base_positions
-    }
-
-    fn spawn_robots_in_base(
-        base_positions: &[(usize, usize)],
-        robot_counts: &[(RobotType, usize)],
-    ) -> Vec<Robot> {
-        let mut robots = Vec::new();
-        let mut position_index = 0;
-
-
-        for (robot_type, count) in robot_counts {
-            for _i in 0..*count {
-                if position_index < base_positions.len() {
-                    let (x, y) = base_positions[position_index];
-                    robots.push(Robot::new(x, y, *robot_type));
-                    position_index += 1;
-                } else {
-                    position_index = 0;
-                    let (x, y) = base_positions[position_index];
-                    robots.push(Robot::new(x, y, *robot_type));
-                    position_index += 1;
-                }
-            }
-        }
-
-        robots
-    }
 }

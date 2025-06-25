@@ -21,8 +21,4 @@ impl Tile {
             Tile::Robot => 'R', //'🤖',
         }
     }
-
-    pub fn is_consumable(&self) -> bool {
-        matches!(self, Tile::Energy | Tile::Mineral)
-    }
 }
