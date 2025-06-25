@@ -1,11 +1,11 @@
-use noise::{NoiseFn, Perlin, Seedable};
+use noise::{NoiseFn, Perlin};
 use rand::{Rng, SeedableRng};
 use rand::rngs::StdRng;
 
 use super::tile::Tile;
 
 pub fn generate_map(width: usize, height: usize, seed: u32) -> Vec<Vec<Tile>> {
-    let perlin = Perlin::new().set_seed(seed);
+    let perlin = Perlin::new(seed);  // Correction ici - passer le seed directement
     let mut rng = StdRng::seed_from_u64(seed as u64);
 
     let scale = 0.1;
@@ -34,13 +34,4 @@ pub fn generate_map(width: usize, height: usize, seed: u32) -> Vec<Vec<Tile>> {
     }
 
     map
-}
-
-pub fn display_map(map: &[Vec<Tile>]) {
-    for row in map {
-        for &tile in row {
-            print!("{}", tile.to_char());
-        }
-        println!();
-    }
 }
