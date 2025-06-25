@@ -5,6 +5,8 @@ pub enum Tile {
     Energy,
     Mineral,
     Science,
+    Base,
+    Robot,
 }
 
 impl Tile {
@@ -15,6 +17,8 @@ impl Tile {
             Tile::Energy => '⚡',
             Tile::Mineral => '⛏',
             Tile::Science => '🔬',
+            Tile::Base => '🏠',
+            Tile::Robot => '🤖',
         }
     }
 

@@ -1,0 +1,27 @@
+# Rust build files
+/target/
+**/*.rs.bk
+
+# Cargo package files
+Cargo.lock
+
+# IDE and editor files
+/.idea/
+/.vscode/
+/*.swp
+*.sublime-workspace
+*.sublime-project
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Byebug command history
+.byebug_history
+
+# Backup files
+*~
+*.bak
+
+# Logs
+*.log

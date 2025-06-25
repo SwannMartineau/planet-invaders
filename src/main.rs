@@ -94,6 +94,8 @@ fn render_map(f: &mut Frame, area: ratatui::layout::Rect, map: &[Vec<Tile>]) {
                         Tile::Energy => Color::Yellow,
                         Tile::Mineral => Color::Cyan,
                         Tile::Science => Color::Magenta,
+                        Tile::Base => Color::Green,
+                        Tile::Robot => Color::Blue,
                     };
                     Span::styled(format!("{} ", ch), Style::default().fg(color))
                 })
