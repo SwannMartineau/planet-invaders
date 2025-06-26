@@ -14,17 +14,20 @@
 ## Compilation et exécution
 
 1. **Cloner le dépôt :**
+
    ```sh
    git clone https://github.com/SwannMartineau/planet-invaders.git
    cd planet-invaders
    ```
 
 2. **Compiler le projet :**
+
    ```sh
    cargo build --release
    ```
 
 3. **Lancer le jeu :**
+
    ```sh
    cargo run
    ```
@@ -32,8 +35,14 @@
    > Utilise `cargo run --release` pour de meilleures performances.
 
 4. **Contrôles :**
+
    - `q` ou `Echap` : quitter le jeu
 
+5. **Tests :**
+
+   ```sh
+   cargo test
+   ```
 
 ## Collaborateurs
 
